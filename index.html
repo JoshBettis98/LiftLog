@@ -38,20 +38,20 @@
 html{-webkit-text-size-adjust:100%}
 /* App shell: the document never scrolls. #scroll is the only scrolling area and the tab bar sits below it in normal flow,
    so iOS Home Screen mode can't shift a fixed bar when page heights change. */
-html{height:100%;box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font:16px/1.4 var(--font-ui);margin:0;height:100%;overflow:hidden;display:flex;flex-direction:column;
+/* --app-h is set from the real screen height in Home Screen mode, where iOS reports a viewport that is short by the status bar. */
+html{height:var(--app-h,100%);box-sizing:border-box;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 var(--font-ui);margin:0;height:var(--app-h,100%);overflow:hidden;display:flex;flex-direction:column;
   -webkit-tap-highlight-color:transparent}
 #scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:env(safe-area-inset-top,0px) 28px}
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 28px}
 body.locked{overflow:hidden}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;padding:0;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 button:disabled{opacity:.4;cursor:default}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #app{max-width:560px;margin:0 auto}
 
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 10px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:calc(14px + env(safe-area-inset-top,0px)) 10px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
 .top h1{font:800 32px/1.05 var(--font-num);letter-spacing:-.01em;margin:0;text-wrap:balance}
 .sub{color:var(--muted);font-size:15px;margin-top:4px}
 section{margin-top:24px}
@@ -128,11 +128,11 @@ details.help li{margin:6px 0}
 .empty{text-align:center;padding:28px 16px}
 
 /* Workout layer */
-.wo{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;
-  padding-top:env(safe-area-inset-top,0px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.wo{position:fixed;top:0;left:0;right:0;height:var(--app-h,100%);z-index:20;background:var(--bg);display:flex;flex-direction:column}
+.wo-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:24px}
 .wo-inner{max-width:560px;margin:0 auto}
-.wo-top{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:12px;padding-block:12px 8px}
+.wo-top{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:12px;padding-block:calc(12px + env(safe-area-inset-top,0px)) 8px}
 .wo-title{font:800 24px/1.1 var(--font-num)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);margin-top:12px}
 .card > .swipe-c{padding:12px 14px 6px}
@@ -156,7 +156,7 @@ details.help li{margin:6px 0}
 .plate[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
 .plate[aria-pressed="true"]::after{border-color:var(--accent-ink);background:var(--accent)}
 .card .foot{display:flex;justify-content:space-between}
-.restbar{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-top:1px solid var(--line);
+.restbar{position:relative;flex:none;z-index:21;background:var(--surface);border-top:1px solid var(--line);
   padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .restbar .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:10px}
 .clock{font:800 36px/1 var(--font-num);font-variant-numeric:tabular-nums}
@@ -170,7 +170,7 @@ details.help li{margin:6px 0}
 .tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted);min-height:50px}
 .tabs button[aria-current="page"]{color:var(--accent)}
 .tabs svg{width:25px;height:25px}
-.scrim{position:fixed;inset:0;z-index:30;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center}
+.scrim{position:fixed;top:0;left:0;right:0;height:var(--app-h,100%);z-index:30;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--surface);width:100%;max-width:560px;max-height:86%;overflow-y:auto;border-radius:18px 18px 0 0;
   padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .sheet h3{font:800 21px/1.2 var(--font-num);margin:0 0 12px}
@@ -565,7 +565,7 @@ function vGym(){
 function vWorkout(){
   const a=S.active;
   const n=loggedCount();
-  return`<div class="wo-inner"><div class="wo-top"><div class="grow"><div class="wo-title">${esc(a.title)}</div><div class="meta">${n} set${n===1?"":"s"} logged</div></div>
+  return`<div class="wo-scroll" id="wos"><div class="wo-inner"><div class="wo-top"><div class="grow"><div class="wo-title">${esc(a.title)}</div><div class="meta">${n} set${n===1?"":"s"} logged</div></div>
    <div class="wtimer${a.paused?" paused":""}">${a.tStart?`<span class="clockS" id="elapsed" aria-label="Workout time"></span>
      <button class="ibtn" data-a="pauseToggle" aria-label="${a.paused?"Resume workout":"Pause workout"}">${a.paused?ICON.play:ICON.pause}</button>`
      :`<span class="wait">Timer starts with your first set</span>`}</div>
@@ -584,7 +584,7 @@ function vWorkout(){
       <button class="plate" data-a="set" data-id="${it.id}" data-i="${i}" aria-pressed="${!!it.done[i]}" aria-label="${it.done[i]?"Undo":"Log"} set ${i+1}"></button></div></div>`).join("")}
      <div class="foot"><button class="link" data-a="addSet" data-id="${it.id}">${ICON.plus}Add set</button></div>`,"card")}).join("")}
    <div class="actions"><button class="btn" data-a="addEx" data-ctx="wo">${ICON.plus}Add exercise</button></div>
-   ${a.items.length?`<p class="hint">Swipe left on an exercise to replace or delete it, or on a set to delete that set.</p>`:""}</div>
+   ${a.items.length?`<p class="hint">Swipe left on an exercise to replace or delete it, or on a set to delete that set.</p>`:""}</div></div>
    <div class="restbar" id="restbar"><div class="in"><div class="grow"><div class="meta" id="rest-label"></div><div class="clock" id="rest-time"></div></div><div class="restctl" id="rest-ctl"></div></div></div>`;
 }
 
@@ -599,7 +599,7 @@ function renderWorkout(){
   const wo=$("#wo");
   if(!S.active){wo.hidden=true;wo.innerHTML="";document.body.classList.remove("locked");return}
   if(swOpen&&wo.contains(swOpen))swOpen=null;
-  const st=wo.scrollTop;wo.hidden=false;wo.innerHTML=vWorkout();wo.scrollTop=st;document.body.classList.add("locked");ctlMode="";tick();
+  const st=$("#wos")?$("#wos").scrollTop:0;wo.hidden=false;wo.innerHTML=vWorkout();$("#wos").scrollTop=st;document.body.classList.add("locked");ctlMode="";tick();
 }
 
 // ---------- Timer ----------
@@ -689,7 +689,7 @@ const A={
       <div class="actions"><button class="btn danger" data-a="deleteAsk" data-ok="1" data-ctx="${d.ctx}" data-id="${d.id}">Delete exercise</button><button class="btn" data-a="closeSheet">Cancel</button></div>`);return}
     list.splice(list.indexOf(it),1);closeSheet();save();rerender(d.ctx);toast(`Deleted ${it.name}`)},
   addEx:d=>openPicker(name=>{const list=listFor(d.ctx);list.push(newItem(d.ctx,name));save();rerender(d.ctx);
-      if(d.ctx==="wo"){const wo=$("#wo");wo.scrollTop=wo.scrollHeight}toast(`Added ${name}`)},
+      if(d.ctx==="wo"){const w=$("#wos");w.scrollTop=w.scrollHeight}toast(`Added ${name}`)},
     {taken:listFor(d.ctx).map(x=>x.name)}),
   never:d=>{const list=listFor(d.ctx);const it=list.find(x=>x.id===d.id);if(!S.settings.excluded.includes(it.name))S.settings.excluded.push(it.name);
     const alt=alternatives(it.name,list)[0];if(alt)replaceEx(d.ctx,d.id,alt.name);else list.splice(list.indexOf(it),1);
@@ -776,6 +776,22 @@ document.addEventListener("change",e=>{const el=e.target,k=el.dataset&&el.datase
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#sheet").hidden)closeSheet();if(e.key==="Enter"&&e.target.id==="new-rname"){const b=$(".sheet .btn.primary");if(b)b.click()}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")persistNow();else{tick();wake()}});
 window.addEventListener("pagehide",()=>{persistNow()});
+
+// ---------- Screen height ----------
+// In Home Screen mode the app fills the whole screen, so size it from the screen itself.
+function fitHeight(){
+  const standalone=navigator.standalone===true||matchMedia("(display-mode: standalone)").matches;
+  const root=document.documentElement.style;
+  if(!standalone){root.removeProperty("--app-h");return}
+  const portrait=matchMedia("(orientation: portrait)").matches;
+  const h=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
+  root.setProperty("--app-h",h+"px");
+}
+// The page itself should never scroll (only #scroll and the workout list do). Undo any scroll iOS applies, except while typing.
+const typing=()=>document.activeElement&&document.activeElement.matches("input,textarea,select");
+addEventListener("scroll",()=>{if((scrollY||scrollX)&&!typing())scrollTo(0,0)},{passive:true});
+document.addEventListener("focusout",()=>setTimeout(()=>{if(!typing()&&(scrollY||scrollX))scrollTo(0,0)},50));
+fitHeight();addEventListener("resize",fitHeight);addEventListener("orientationchange",()=>setTimeout(fitHeight,200));
 
 // ---------- Boot ----------
 (async()=>{
