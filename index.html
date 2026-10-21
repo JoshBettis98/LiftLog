@@ -351,7 +351,9 @@ function lastSets(name){const s=lastSessionWith(name);if(!s)return null;const l=
 function target(name,reps){const sets=lastSets(name);if(!sets)return null;const best=Math.max(0,...sets.map(x=>e1rm(x.w,x.reps)));if(best<=0)return null;return Math.max(5,Math.round(best*1.02/(1+reps/30)/5)*5)}
 // Thumbs up makes an exercise 3x as likely to be picked, thumbs down 1/4 as likely.
 const rating=name=>(S.settings.ratings||{})[name]||0;
-const weightOf=e=>rating(e.name)>0?3:rating(e.name)<0?0.25:1;
+// Exercises you've logged before are 3x as likely, so most plans come with suggested weights.
+let HIST=null;const histSet=()=>HIST||(HIST=new Set(finished().flatMap(s=>s.sets.map(x=>x.ex))));
+const weightOf=e=>(rating(e.name)>0?3:rating(e.name)<0?0.25:1)*(histSet().has(e.name)?3:1);
 function wpick(a){const tot=a.reduce((n,e)=>n+weightOf(e),0);let r=Math.random()*tot;for(const e of a){r-=weightOf(e);if(r<=0)return e}return a[a.length-1]}
 // Starting estimates: est. 1-rep max as a multiple of bodyweight for an intermediate male lifter.
 // Dumbbell lifts are per dumbbell. 0 = bodyweight exercise, no estimate. Anything not listed falls back by exercise type.
@@ -380,7 +382,7 @@ const EST={"Barbell Bench Press":1,"Incline Barbell Bench Press":.85,"Decline Ba
 const LEVELS=[["beginner","Beginner","Lifting regularly for less than a year."],["intermediate","Intermediate","Lifting consistently for 1 to 3 years."],["advanced","Advanced","Lifting seriously for 3 years or more."]];
 const LEVEL_X={beginner:.6,intermediate:1,advanced:1.3};
 const LOWER=new Set(["quads","hamstrings","glutes","calves"]);
-function est1rm(name){const pf=S.settings.profile;if(!pf||!pf.done||!pf.bw)return null;const e=byName[name];if(!e)return null;
+function est1rm(name){const pf=S.settings.profile;if(!pf||!pf.bw||!pf.sex)return null;const e=byName[name];if(!e)return null;
   let r=name in EST?EST[name]:(e.equipment.every(q=>q==="bodyweight"||q==="pullupBar")?0:e.compound?.6:.3);if(!r)return null;
   r*=LEVEL_X[pf.level]||.6;if(pf.sex==="female")r*=LOWER.has(e.muscle)?.75:.55;return pf.bw*r}
 // Conservative first target: 90% of the estimated max, converted to a working weight for the planned reps.
@@ -403,7 +405,7 @@ function targetMuscles(focus,count){
 function exMinutes(p){const rest=(GOALS[S.ui.goal]||GOALS.Muscle).rest,e=byName[p.name];
   const wu=S.settings.warmups===false?0:e&&e.compound?2:1;return p.sets*(0.75+rest/60)+1+wu}
 function estMinutes(list){return Math.round(5+list.reduce((m,p)=>m+exMinutes(p),0))}
-function generate(){
+function generate(){HIST=null;
   const focus=S.ui.focus,budget=S.ui.minutes;
   const roughCount=Math.max(2,Math.round((budget-5)/8.5));
   const muscles=targetMuscles(focus,roughCount);const count=12;
@@ -721,7 +723,7 @@ function vGym(){
   const st=S.settings;const fin=finished();
   return header("Gym")+
   `<section><h2>Starting weight estimates</h2><div class="panel">${profileForm()}
-    ${(st.profile||{}).done?"":`<div class="actions"><button class="btn go" data-a="pfSave">Save and estimate</button></div>`}</div>
+    ${(st.profile||{}).bw&&(st.profile||{}).sex?"":`<div class="actions"><button class="btn go" data-a="pfSave">Save and estimate</button></div>`}</div>
    <p class="meta">Used only for exercises you haven't logged yet. Saved on this phone only.</p></section>
   <section><h2>Equipment at my gym</h2><div class="rows">${EQUIP.map(([k,l])=>`<label class="row"><span class="grow">${l}</span><input type="checkbox" class="switch" id="eq-${k}" data-ch="eq" data-v="${k}" ${st.equipment.includes(k)?"checked":""}></label>`).join("")}</div>
    <p class="meta">Bodyweight exercises are always included.</p></section>
@@ -890,8 +892,8 @@ const A={
     if(!(bw>=60&&bw<=500)){toast("Enter your bodyweight in pounds, between 60 and 500.");return}
     if(!pf.sex){toast("Choose male or female so the estimates use the right strength ratios.");return}
     pf.bw=bw;pf.done=true;S.settings.profile=pf;generate();save();render();toast("Starting weights estimated. They'll adjust after your first sets.")},
-  pfSex:d=>{const pf=S.settings.profile=S.settings.profile||{level:"beginner"};pf.sex=d.v;save();render()},
-  pfLevel:d=>{const pf=S.settings.profile=S.settings.profile||{level:"beginner"};pf.level=d.v;save();render()},
+  pfSex:d=>{const pf=S.settings.profile=S.settings.profile||{level:"beginner"};const bw=parseFloat(($("#pf-bw")||{}).value);if(bw>=60&&bw<=500)pf.bw=bw;pf.sex=d.v;save();render()},
+  pfLevel:d=>{const pf=S.settings.profile=S.settings.profile||{level:"beginner"};const bw=parseFloat(($("#pf-bw")||{}).value);if(bw>=60&&bw<=500)pf.bw=bw;pf.level=d.v;save();render()},
   import:()=>$("#file").click(),
   focus:d=>{S.ui.focus=d.v;generate();render()},
   goal:d=>{S.ui.goal=d.v;generate();render()},
@@ -1006,7 +1008,7 @@ const CH={
   file:async el=>{const f=el.files&&el.files[0];el.value="";if(!f)return;try{const msg=importCSV(await f.text());generate();render();toast(msg)}catch(e){toast(e.message||"That file couldn't be read.")}},
   eq:el=>{const set=new Set(S.settings.equipment);el.checked?set.add(el.dataset.v):set.delete(el.dataset.v);S.settings.equipment=EQUIP.map(e=>e[0]).filter(k=>set.has(k));generate();save()},
   shortcut:el=>{S.settings.shortcut=el.checked;save()},
-  pfbw:el=>{const pf=S.settings.profile=S.settings.profile||{level:"beginner"};const v=parseFloat(el.value);if(v>=60&&v<=500){pf.bw=v;save();if(pf.done)generate()}},
+  pfbw:el=>{const pf=S.settings.profile=S.settings.profile||{level:"beginner"};const v=parseFloat(el.value);if(v>=60&&v<=500){pf.bw=v;save()}},
   warmups:el=>{S.settings.warmups=el.checked;save();generate();render()},
   dynRest:el=>{S.settings.dynRest=el.checked;save();render()},
   wake:el=>{S.settings.wake=el.checked;save();el.checked?wake():unwake()},
